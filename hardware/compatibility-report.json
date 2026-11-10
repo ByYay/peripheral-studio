@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-09",
+  "writes": "Superseded later on 2026-11-09: the first Aerox attempt failed because SteelSeries GG overrode it. User-observed verification then confirmed Aerox color/DPI, G733 color (readback) and MX Keys backlight (readback); see write-experiment.json and capabilities.json. Only those settings are writable in the app.",
+  "batteryUpdate": "G733 battery now read via HID++ ADC_MEASUREMENT (consistent 3744-3747 mV, ~28-29%); HeadsetControl 4.2 kept only as a fallback when the HID++ interface is absent.",
+  "dependencies": {
+    "rivalcfg": "4.17.0",
+    "hidapi": "0.15.0",
+    "headsetcontrol": "4.2.0"
+  },
+  "devices": {
+    "mx-keys-mini": {
+      "measured": {
+        "receiver": "046d:c548",
+        "transport": "Bolt",
+        "slot": 1,
+        "name": "MX Keys Mini for Business",
+        "batteryPercent": 20,
+        "charging": false
+      },
+      "implementation": "Windows HIDAPI feature discovery and correlated read-only HID++ name/battery queries",
+      "untested": [
+        "Bluetooth",
+        "backlight writes",
+        "key assignments"
+      ],
+      "sources": [
+        "https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/hidpp20.py",
+        "https://github.com/pwr-Solaar/Solaar/blob/master/lib/logitech_receiver/hidpp20_constants.py"
+      ],
+      "latestObservation": "First slot1 request timed out; two subsequent attempts returned MX Keys Mini for Business, battery20%, not charging. Added one bounded same-slot wake retry."
+    },
+    "aerox-3": {
+      "measured": {
+        "usbId": "1038:1838",
+        "transport": "2.4 GHz dongle",
+        "batteryPercent": 80,
+        "charging": false,
+        "observedAt": "2026-11-09T14:20:18Z"
+      },
+      "laterObservation": "2026-11-09T17:38Z battery null; 17:40Z successful live API read 75%, charging false; full enumeration 3.70 seconds",
+      "upstreamSupported": [
+        "DPI",
+        "polling rate",
+        "three RGB zones",
+        "battery",
+        "sleep/dim timers",
+        "button mapping"
+      ],
+      "untested": [
+        "all setting writes",
+        "USB wired mode",
+        "physical lighting synchronization"
+      ],
+      "sources": [
+        "https://flozz.github.io/rivalcfg/devices/aerox3_wireless.html"
+      ],
+      "writeExperiment": "hardware/write-experiment.json"
+    },
+    "g733": {
+      "measured": {
+        "usbId": "046d:0afe",
+        "name": "G733 Gaming Headset",
+        "batteryStatus": "BATTERY_UNAVAILABLE",
+        "batteryPercent": null
+      },
+      "upstreamSupported": [
+        "battery",
+        "lights on/off",
+        "sidetone"
+      ],
+      "untested": [
+        "successful battery reading",
+        "lighting writes",
+        "RGB color",
+        "sidetone writes"
+      ],
+      "sources": [
+        "https://github.com/Sapd/HeadsetControl/releases/tag/4.2.0"
+      ],
+      "latestObservation": "Awake retry returned status success but battery BATTERY_UNAVAILABLE level -1 voltage_mv 1; not a valid battery measurement."
+    }
+  },
+  "limitations": [
+    "Receiver presence does not prove paired device is awake",
+    "No simulated telemetry substituted",
+    "No known initial setting/readback available for safe write rollback",
+    "Bluetooth not implemented",
+    "Optional vendor/tools are workspace dependencies, not source code"
+  ]
+}

@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Frontend dependencies and build output (rebuilt with pnpm)
+node_modules/
+frontend/dist/
+frontend/.pnpm-store/
+*.tsbuildinfo
+
+# Packaging output (PyInstaller)
+build/
+dist/
+
+# Third-party binaries installed locally (see README: Hardware dependencies)
+hardware/vendor/
+hardware/tools/
+
+# Local tooling, test output and logs
+.tools/
+.test-artifacts/
+.claude/
+.vscode/
+.idea/
+*.log
+*.tmp
+Thumbs.db
+desktop.ini
+
+# Internal development notes, not part of the published project
+AGENTS.md
+architecture.json
+release-readiness.json

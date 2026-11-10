@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:upm:api:v1",
+  "title": "Unified Peripheral Manager API v1",
+  "$defs": {
+    "Settings": {
+      "type":"object", "additionalProperties":false,
+      "properties": {
+        "lightingColor":{"type":"string","pattern":"^#[0-9a-fA-F]{6}$"},
+        "lightingBrightness":{"type":"integer","minimum":0,"maximum":100},
+        "dpi":{"type":"integer","minimum":1},
+        "pollingRate":{"type":"integer","minimum":1},
+        "lightingZones":{"type":"object","maxProperties":8,"additionalProperties":{"type":"string","pattern":"^#[0-9a-fA-F]{6}$"},"description":"Per-zone colors (aerox front/middle/rear, g733 top/bottom); override lightingColor"},
+        "lightingEffect":{"enum":["static","breathing","rainbow"]},
+        "lightingSpeed":{"enum":["slow","normal","fast"],"description":"Speed of the effects listed in limits.lightingSpeedEffects"},
+        "backlightMode":{"enum":["off","auto","manual"]},
+        "backlightLevel":{"type":"integer","minimum":0,"description":"In auto mode the level read back is the keyboard's current automatic level"}
+      }
+    },
+    "Device": {
+      "type":"object", "additionalProperties":false,
+      "required":["id","name","kind","connection","batteryPercent","capabilities","settings","limits"],
+      "properties": {
+        "id":{"enum":["mx-keys-mini","g733","aerox-3"]},
+        "name":{"type":"string"},
+        "kind":{"enum":["keyboard","headset","mouse"]},
+        "connection":{"enum":["simulated","connected","disconnected","unsupported"]},
+        "batteryPercent":{"type":["integer","null"],"minimum":0,"maximum":100},
+        "status":{"type":"object","properties":{"code":{"type":"string"},"message":{"type":"string"}}},
+        "telemetry":{"type":"object","properties":{
+          "batteryMillivolts":{"type":"integer","description":"Battery percent is estimated from this measured voltage"},
+          "writeVerification":{"enum":["readback","acknowledged"],"description":"readback: applied settings are confirmed by reading the device; acknowledged: commands are sent but the device cannot report settings back"},
+          "fnKeys":{"enum":["special","standard"],"description":"Keyboard F-row priority read from the device (Fn+Esc toggles it): special = printed functions without Fn, standard = F1-F12 without Fn"},
+          "sharedKeys":{"type":"array","items":{"type":"string"},"description":"App-assigned keyboard keys another app (e.g. Logi Options+) had diverted too; it also receives their presses"}
+        }},
+        "desiredSettings":{"$ref":"#/$defs/Settings"},
+        "capabilities":{
+          "type":"object", "additionalProperties":false, "required":["lighting","dpi","pollingRate","backlight"],
+          "properties":{"lighting":{"type":"boolean"},"dpi":{"type":"boolean"},"pollingRate":{"type":"boolean"},"backlight":{"type":"boolean"}}
+        },
+        "settings":{"$ref":"#/$defs/Settings"},
+        "limits":{
+          "type":"object", "additionalProperties":false,
+          "properties":{
+            "dpi":{"type":"object","required":["min","max","step"],"additionalProperties":false,"properties":{"min":{"type":"integer"},"max":{"type":"integer"},"step":{"type":"integer","minimum":1}}},
+            "pollingRates":{"type":"array","items":{"type":"integer","minimum":1},"uniqueItems":true},
+            "backlightLevel":{"type":"object","required":["min","max","step"],"additionalProperties":false,"properties":{"min":{"type":"integer"},"max":{"type":"integer"},"step":{"type":"integer","minimum":1}}},
+            "lightingZones":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+            "lightingEffects":{"type":"array","items":{"enum":["static","breathing","rainbow"]},"uniqueItems":true},
+            "lightingSpeedEffects":{"type":"array","items":{"enum":["breathing","rainbow"]},"uniqueItems":true,"description":"Effects whose speed lightingSpeed sets"}
+          }
+        }
+      }
+    },
+    "Profile": {
+      "type":"object", "additionalProperties":false,"required":["id","name","kind","settings"],
+      "properties":{
+        "id":{"type":"string","minLength":1},"name":{"type":"string","minLength":1,"maxLength":64},
+        "kind":{"enum":["main","automatic"],"description":"One main profile is chosen; an automatic profile applies while its trigger holds, then the chosen main profile applies again"},
+        "settings":{"type":"object","additionalProperties":{"$ref":"#/$defs/Settings"}},
+        "trigger":{"$ref":"#/$defs/Trigger","description":"Automatic profiles only"}
+      }
+    },
+    "Trigger": {
+      "oneOf":[
+        {"type":"object","additionalProperties":false,"required":["type","start","end"],"properties":{"type":{"const":"time"},"start":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"},"end":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"}},"description":"Local time range, start inclusive, end exclusive; may pass midnight; start and end differ"},
+        {"type":"object","additionalProperties":false,"required":["type","apps"],"properties":{"type":{"const":"app"},"apps":{"type":"array","minItems":1,"maxItems":16,"items":{"type":"string","pattern":"\\.exe$"}}},"description":"Holds while one of these programs runs (file names, lower case; a full path is reduced to its name)"}
+      ],
+      "description":"When triggers overlap an app trigger beats a time trigger; among the same type the earlier profile wins"
+    },
+    "ProfileState": {
+      "type":"object","additionalProperties":false,"required":["mainProfileId","activeProfileId","activeBy"],
+      "properties":{
+        "mainProfileId":{"type":["string","null"]},
+        "activeProfileId":{"type":["string","null"],"description":"Changes made while it is active are saved into it"},
+        "activeBy":{"enum":["main","rule","manual",null],"description":"manual: an automatic profile applied by hand, until a trigger starts or ends"}
+      }
+    },
+    "Error": {
+      "type":"object","required":["error"],"additionalProperties":false,
+      "properties":{"error":{"type":"object","required":["code","message"],"additionalProperties":false,"properties":{"code":{"type":"string"},"message":{"type":"string"}}}}
+    }
+  },
+  "x-routes": [
+    {"method":"GET","path":"/api/v1/health","response":"{status: 'ok', mode: 'simulation' | 'hardware', apiVersion: 1, devicesRevision: number}","note":"devicesRevision changes when devices come, go, get their saved settings back or a profile is applied (also by a trigger); cheap to poll"},
+    {"method":"GET","path":"/api/v1/devices","response":"{devices: Device[]}"},
+    {"method":"PATCH","path":"/api/v1/devices/{id}/settings","request":"Settings (partial, capability-validated)","response":"{device: Device}"},
+    {"method":"GET","path":"/api/v1/profiles","response":"{profiles: Profile[], profileState: ProfileState}"},
+    {"method":"POST","path":"/api/v1/profiles","request":"{name: string, kind?: 'main' | 'automatic', trigger?: Trigger}","response":"{profile: Profile, profileState: ProfileState}","status":201,"note":"holds the current settings and becomes active (a main profile is chosen; an automatic one is active by hand); the first automatic profile without a chosen main profile also creates 'Default' from the current settings","errors":"400 invalid_profile|invalid_trigger, 409 duplicate_profile|profile_limit"},
+    {"method":"PATCH","path":"/api/v1/profiles/{id}","request":"{name?: string, trigger?: Trigger}","response":"{profile: Profile, profileState: ProfileState}","errors":"400 invalid_profile|invalid_trigger, 404 profile_not_found, 409 duplicate_profile"},
+    {"method":"POST","path":"/api/v1/profiles/{id}/activate","request":"{}","response":"{devices: Device[], profile: Profile, profileState: ProfileState}","note":"a main profile becomes the chosen one and sets aside automatic profiles active now until their trigger ends; hardware devices that are off get the settings when they come back"},
+    {"method":"DELETE","path":"/api/v1/profiles/{id}","response":"{profiles: Profile[], profileState: ProfileState}","errors":"404 profile_not_found, 409 main_profile_in_use (the chosen main profile while other profiles exist)"},
+    {"method":"DELETE","path":"/api/v1/data","response":"{profiles: [], assignments: AssignmentState, profileState: ProfileState}","note":"deletes profiles, saved device settings and key assignments (controls get their own function back); the language choice stays; devices keep their current state"},
+    {"method":"GET","path":"/api/v1/preferences","response":"{language: 'tr' | 'en'}","note":"saved choice, otherwise the Windows display language"},
+    {"method":"PUT","path":"/api/v1/preferences","request":"{language: 'tr' | 'en'}","response":"{language: 'tr' | 'en'}","errors":"400 invalid_preferences"},
+    {"method":"GET","path":"/api/v1/automation","response":"{status, controls: string[], keys: string[], buttons: string[], profileId: string | null, bindings: {[control]: Action}}","availability":"desktop hardware mode; otherwise 409 automation_unavailable"},
+    {"method":"PUT","path":"/api/v1/automation/bindings","request":"{profileId: string, bindings: {[control]: Action}} (replaces all; disables automation)","response":"same as GET /api/v1/automation","maxBodyBytes":524288},
+    {"method":"POST","path":"/api/v1/automation/{enable|disable|recording/start|recording/cancel}","request":"{}","response":"{status}"},
+    {"method":"POST","path":"/api/v1/automation/execute","request":"{control: string}","response":"{status}"},
+    {"method":"POST","path":"/api/v1/automation/recording/stop","request":"{}","response":"{status, events: InputEvent[]}"}
+  ],
+  "x-automation": {
+    "Action":"{kind: shortcut|remap|macro|url|application|script|profile, target?: string, keys?: string[], events?: InputEvent[]}",
+    "InputEvent":"{kind: key_down|key_up|button_down|button_up|wait, value: string, delay: seconds}",
+    "errors":"400 invalid input, 403 not enabled/permitted, 409 busy or unavailable; script approval exists only in the native desktop dialog"
+  }
+}

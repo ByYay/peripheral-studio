@@ -1,0 +1,5 @@
+# Text files are stored with LF and checked out with the platform's line endings.
+* text=auto
+*.png binary
+*.ico binary
+*.webp binary

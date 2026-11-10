@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-09",
+  "summary": "User-observed physical verification of writes. The first attempt (17:41Z) showed no change because SteelSeries GG was running; it passed after the user closed GG. G733 lighting needed Windows Dynamic Lighting turned off.",
+  "conflicts": {
+    "SteelSeries GG": "Overrides Aerox 3 lighting/DPI while running; user closes it",
+    "Logi Options+": "Manages MX Keys backlight; closed during tests",
+    "Windows Dynamic Lighting": "Animates G733 LEDs via logi_lamparray_service and overwrites HID++ colors within milliseconds; user turned it off"
+  },
+  "results": [
+    {"device": "aerox-3", "setting": "z1/z2/z3 colors #ff0000 (rivalcfg)", "readback": false, "userObserved": "all three zones red", "verified": true},
+    {"device": "aerox-3", "setting": "dpi 400 then 800 (rivalcfg)", "readback": false, "userObserved": "cursor clearly slower at 400", "verified": true},
+    {"device": "aerox-3", "setting": "polling rate", "readback": false, "userObserved": "not measured (user skipped)", "verified": false},
+    {"device": "g733", "setting": "COLOR_LED_EFFECTS 0x8070 setZoneEffect static #ff0000, both zones, no persistence flag", "readback": "0xE0 returned ff0000 for both zones, stable", "userObserved": "both strips red", "verified": true},
+    {"device": "g733", "setting": "SIDETONE 0x8300 set 50", "readback": "50", "userObserved": "not testable (no microphone)", "verified": false, "restored": 0},
+    {"device": "mx-keys-mini", "setting": "BACKLIGHT2 0x1982 manual level 7, 0, 7", "readback": "mode 3 with requested level", "userObserved": "bright at 7, dark at 0, bright again", "verified": true, "restored": "automatic mode"},
+    {"device": "all", "setting": "end-to-end through the app HTTP API (Aerox blue, G733 green, MX manual 7)", "userObserved": "all confirmed", "verified": true, "final": "MX automatic; G733 and Aerox #27dce8"}
+  ]
+}
