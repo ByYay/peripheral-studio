@@ -11,7 +11,7 @@ Logitech G733 and SteelSeries Aerox 3 Wireless, without running three vendor sui
 ![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows11&logoColor=white)
 ![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Three.js](https://img.shields.io/badge/Three.js-r180-000000?logo=threedotjs&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-r180-4B5563?logo=threedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-a0e8d0)
 
@@ -150,7 +150,7 @@ cd frontend; pnpm test; pnpm typecheck
 | Logi Options+ | Also receives presses of keys it manages, so both actions run | Close or uninstall it |
 | Windows Dynamic Lighting | Animates the G733 LEDs and overwrites its colors within milliseconds | Turn it off for the headset in *Settings › Personalization › Dynamic Lighting* |
 
-## 🏗️ Architecture
+## 🧩 Architecture
 
 ```mermaid
 flowchart TB
